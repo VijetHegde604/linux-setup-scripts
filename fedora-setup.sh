@@ -85,7 +85,7 @@ create_battery_service() {
     echo "Creating systemd service to set battery charge threshold to 80%..."
 
     # Create the systemd service file
-    cat <<EOF | run_sudo tee /etc/systemd/system/battery-threshold.service > /dev/null
+    cat <<EOF | sudo tee /etc/systemd/system/battery-threshold.service > /dev/null
 [Unit]
 Description=Set battery charge threshold
 After=sysinit.target
