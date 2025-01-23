@@ -28,7 +28,7 @@ update_system() {
 # Install essential packages
 install_packages() {
     echo "Installing required packages..."
-    run_sudo dnf install -y fastfetch git wget curl fish akmods kernel-devel bluez power-profiles-daemon || handle_error "Failed to install packages."
+    run_sudo dnf install -y fastfetch git wget curl fish || handle_error "Failed to install packages."
 }
 
 # Enable and configure Flatpak
