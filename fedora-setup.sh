@@ -38,6 +38,43 @@ setup_flatpak() {
     run_sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo || handle_error "Failed to add Flathub repository."
 }
 
+# Install Flatpak applications
+install_flatpak_apps() {
+    echo "Installing Flatpak applications..."
+
+    # Add the Flatpak applications you want to install here
+    FLATPAK_APPS=(
+        "com.visualstudio.code"
+        "org.mozilla.firefox"
+        "org.libreoffice.LibreOffice"
+        # Add more applications as needed
+    )
+
+    for app in "${FLATPAK_APPS[@]}"; do
+        echo "Installing $app..."
+        run_sudo flatpak install -y flathub "$app" || handle_error "Failed to install Flatpak application: $app"
+    done
+}
+
+# Install Visual Studio Code using the Microsoft repository
+install_vscode() {
+    echo "Setting up Visual Studio Code repository..."
+
+    # Import Microsoft GPG key
+    run_sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc || handle_error "Failed to import Microsoft GPG key."
+
+    # Add Visual Studio Code repository
+    echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" | sudo tee /etc/yum.repos.d/vscode.repo > /dev/null || handle_error "Failed to add VSCode repository."
+
+    # Update package cache
+    echo "Updating package cache..."
+    run_sudo dnf check-update || handle_error "Failed to update package cache."
+
+    # Install Visual Studio Code
+    echo "Installing Visual Studio Code..."
+    run_sudo dnf install -y code || handle_error "Failed to install Visual Studio Code."
+}
+
 # Install Node.js using nvm
 install_nodejs() {
     echo "Installing Node.js via nvm..."
@@ -116,6 +153,8 @@ main() {
     update_system
     install_packages
     setup_flatpak
+    install_flatpak_apps
+    install_vscode
     install_nodejs
     install_rust
     create_battery_service
