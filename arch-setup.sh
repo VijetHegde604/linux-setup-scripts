@@ -1,131 +1,232 @@
 #!/bin/bash
 
-# Log file for debugging
-LOGFILE="setup.log"
-exec > >(tee -a "$LOGFILE") 2>&1
+# Script configuration
+set -euo pipefail  # Exit on error, undefined vars, and pipe failures
+LOGFILE="${HOME}/setup_$(date +%Y%m%d_%H%M%S).log"
+PACKAGES=(
+    fastfetch
+    git
+    wget
+    curl
+    flatpak
+    fish
+    sof-firmware
+    bluez-utils
+    power-profiles-daemon
+    less
+    okular
+    spectacle
+    docker
+    docker-compose
+    linux-headers
+    base-devel
+)
 
-# Function to handle errors
-handle_error() {
-    echo "Error: $1" >&2
+# Configure logging
+exec 1> >(tee -a "${LOGFILE}")
+exec 2> >(tee -a "${LOGFILE}" >&2)
+
+# Color output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Helper functions
+log() {
+    echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $*"
+}
+
+warn() {
+    echo -e "${YELLOW}[WARNING]${NC} $*" >&2
+}
+
+error() {
+    echo -e "${RED}[ERROR]${NC} $*" >&2
     exit 1
 }
 
-# Prompt for sudo password once
-read -rsp "Enter your sudo password: " SUDO_PASSWORD
-echo
-
-# Function to run commands with sudo
-run_sudo() {
-    echo "$SUDO_PASSWORD" | sudo -S "$@" || handle_error "Failed to run: $*"
+check_root() {
+    if [[ $EUID -eq 0 ]]; then
+        error "This script should NOT be run as root"
+    fi
 }
 
-# Update system
+check_command() {
+    command -v "$1" >/dev/null 2>&1 || error "Required command '$1' not found"
+}
+
+# Ensure sudo access
+setup_sudo() {
+    log "Requesting sudo access..."
+    sudo -v || error "Failed to obtain sudo privileges"
+    
+    # Keep sudo alive
+    while true; do
+        sudo -n true
+        sleep 60
+        kill -0 "$$" || exit
+    done 2>/dev/null &
+}
+
+# System update function
 update_system() {
-    echo "Updating system..."
-    run_sudo pacman -Syu --noconfirm
+    log "Updating system packages..."
+    sudo pacman -Syu --noconfirm || error "System update failed"
 }
 
-# Install essential packages
+# Package installation function
 install_packages() {
-    echo "Installing required packages..."
-    run_sudo pacman -S --noconfirm fastfetch git wget curl flatpak fish sof-firmware bluez-utils power-profiles-daemon less okular spectacle
+    log "Installing required packages..."
+    sudo pacman -S --needed --noconfirm "${PACKAGES[@]}" || error "Package installation failed"
 }
 
-# Install yay (AUR helper)
+# Install yay AUR helper
 install_yay() {
-    echo "Installing yay (AUR helper)..."
-    run_sudo pacman -S --noconfirm base-devel git
-    cd /tmp || handle_error "Failed to change to /tmp directory."
-    git clone https://aur.archlinux.org/yay.git || handle_error "Failed to clone yay repository."
-    cd yay || handle_error "Failed to change to yay directory."
-    makepkg -si --noconfirm || handle_error "Failed to build and install yay."
-    cd ~ || handle_error "Failed to return to home directory."
+    if command -v yay >/dev/null 2>&1; then
+        log "yay is already installed"
+        return
+    }
+
+    log "Installing yay AUR helper..."
+    local temp_dir
+    temp_dir=$(mktemp -d)
+    git clone https://aur.archlinux.org/yay.git "${temp_dir}/yay" || error "Failed to clone yay"
+    (cd "${temp_dir}/yay" && makepkg -si --noconfirm) || error "Failed to install yay"
+    rm -rf "${temp_dir}"
 }
 
 # Install Node.js using nvm
 install_nodejs() {
-    echo "Installing Node.js via nvm..."
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash || handle_error "Failed to install nvm."
+    log "Installing Node.js via nvm..."
+    
+    # Install nvm if not present
+    if [[ ! -d "${HOME}/.nvm" ]]; then
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash || error "Failed to install nvm"
+    fi
 
-    # Source nvm script to make it available immediately
+    # Load nvm
     export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" || handle_error "Failed to source nvm."
+    # shellcheck disable=SC1090
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-    # Install Node.js version 22 using nvm
-    nvm install 22 || handle_error "Failed to install Node.js v22."
+    # Install Node.js LTS
+    nvm install --lts || error "Failed to install Node.js LTS"
+    nvm use --lts || error "Failed to use Node.js LTS"
 
-    # Verify Node.js installation
-    echo "Node.js version:"
-    node -v || handle_error "Node.js is not installed."
-    echo "NVM current version:"
-    nvm current || handle_error "NVM is not working."
-    echo "NPM version:"
-    npm -v || handle_error "NPM is not installed."
+    # Install global npm packages
+    npm install -g npm@latest yarn pnpm || warn "Failed to install global npm packages"
 }
 
 # Install Rust using rustup
 install_rust() {
-    echo "Installing Rust..."
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y || handle_error "Failed to install Rust."
-
-    # Source rustup to make Rust available immediately
-    export PATH="$HOME/.cargo/bin:$PATH"
-
-    # Verify Rust installation
-    echo "Rust version:"
-    rustc --version || handle_error "Rust is not installed."
-    echo "Cargo version:"
-    cargo --version || handle_error "Cargo is not installed."
-}
-
-# Create a systemd service to set battery charge threshold to 80%
-create_battery_service() {
-    echo "Checking if battery charge control is supported..."
-    if [ ! -f /sys/class/power_supply/BAT0/charge_control_end_threshold ]; then
-        echo "Battery charge control is not supported on this system. Skipping service creation."
+    log "Installing Rust..."
+    if command -v rustc >/dev/null 2>&1; then
+        log "Rust is already installed"
+        rustup update
         return
     fi
 
-    echo "Creating systemd service to set battery charge threshold to 80%..."
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y || error "Failed to install Rust"
+    source "$HOME/.cargo/env"
+}
 
-    # Create the systemd service file
-    cat <<EOF | sudo tee /etc/systemd/system/battery-threshold.service > /dev/null
+# Setup Docker
+setup_docker() {
+    log "Setting up Docker..."
+    sudo systemctl enable docker.service
+    sudo systemctl start docker.service
+    sudo usermod -aG docker "$USER" || warn "Failed to add user to docker group"
+}
+
+# Configure battery threshold
+setup_battery() {
+    local threshold=80
+    local bat_path="/sys/class/power_supply/BAT0/charge_control_end_threshold"
+
+    if [[ ! -f "${bat_path}" ]]; then
+        warn "Battery charge control is not supported on this system"
+        return
+    }
+
+    log "Setting up battery charge threshold to ${threshold}%..."
+
+    # Create systemd service
+    sudo tee /etc/systemd/system/battery-threshold.service > /dev/null << EOF
 [Unit]
 Description=Set battery charge threshold
-After=sysinit.target
-After=systemd-modules-load.service
+After=multi-user.target
+StartLimitBurst=0
 
 [Service]
 Type=oneshot
-ExecStart=/bin/bash -c "sleep 5 && echo 80 | sudo tee /sys/class/power_supply/BAT0/charge_control_end_threshold"
+Restart=on-failure
+ExecStart=/bin/bash -c 'echo ${threshold} > ${bat_path}'
+RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-    # Enable and start the service
-    echo "Enabling and starting battery charge threshold service..."
-    run_sudo systemctl enable battery-threshold.service
-    run_sudo systemctl start battery-threshold.service
+    sudo systemctl enable battery-threshold.service
+    sudo systemctl start battery-threshold.service
 }
 
-# Cleanup temporary files
+# Configure system
+configure_system() {
+    log "Configuring system..."
+
+    # Enable SSD trim
+    if [[ -n $(lsblk -d -o name,rota | grep "0$") ]]; then
+        sudo systemctl enable fstrim.timer
+        sudo systemctl start fstrim.timer
+    fi
+
+    # Enable timesyncd
+    sudo systemctl enable systemd-timesyncd.service
+    sudo systemctl start systemd-timesyncd.service
+
+    # Enable bluetooth
+    sudo systemctl enable bluetooth.service
+    sudo systemctl start bluetooth.service
+
+    # Enable power profiles daemon
+    sudo systemctl enable power-profiles-daemon.service
+    sudo systemctl start power-profiles-daemon.service
+}
+
+# Cleanup function
 cleanup() {
-    echo "Cleaning up temporary files..."
-    rm -rf /tmp/yay || handle_error "Failed to clean up /tmp/yay."
+    log "Cleaning package cache..."
+    sudo pacman -Scc --noconfirm
+    
+    log "Cleaning home directory..."
+    rm -rf ~/.cache/yay/*
 }
 
-# Main script execution
+# Main function
 main() {
+    log "Starting system setup..."
+    
+    # Preliminary checks
+    check_root
+    check_command git
+    
+    # Setup
+    setup_sudo
     update_system
     install_packages
     install_yay
     install_nodejs
     install_rust
-    create_battery_service
+    setup_docker
+    setup_battery
+    configure_system
     cleanup
-    echo "Setup complete!"
+    
+    log "Setup complete! Please restart your system to apply all changes."
+    log "Setup log has been saved to: ${LOGFILE}"
 }
 
-# Run the main function
+# Run main function
 main
