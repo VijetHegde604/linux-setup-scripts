@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Log file for debugging
 LOGFILE="setup.log"
 exec > >(tee -a "$LOGFILE") 2>&1
@@ -25,6 +24,36 @@ update_system() {
     run_sudo dnf update -y || handle_error "Failed to update system."
 }
 
+# Remove KDE bloatware
+remove_bloatware() {
+    echo "Removing KDE bloatware..."
+    local bloatware=(
+        "akregator"                   # RSS Feed Reader
+        "dragon"                      # Video Player
+        "elisa-player"               # Music Player
+        "kaddressbook"               # Address Book
+        "kamoso"                     # Webcam Application
+        "kmail"                      # Email Client
+        "kmouth"                     # Speech Synthesizer
+        "knotes"                     # Sticky Notes
+        "kolourpaint"               # Paint Program
+        "konversation"              # IRC Client
+        "korganizer"                # Calendar/Organizer
+        "kpat"                      # Solitaire Card Game
+        "kpublictransport"          # Public Transport Information
+        "krdc"                      # Remote Desktop Client
+        "krfb"                      # Desktop Sharing
+        "kwrite"                    # Text Editor (if you prefer other editors)
+        "neochat"                   # Matrix Client
+        "spectacle"                 # Screenshot Tool (if you prefer other tools)
+    )
+    
+    for app in "${bloatware[@]}"; do
+        echo "Removing $app..."
+        run_sudo dnf remove -y "$app" || echo "Warning: Failed to remove $app"
+    done
+}
+
 # Install essential packages
 install_packages() {
     echo "Installing required packages..."
@@ -35,14 +64,11 @@ install_packages() {
 install_nodejs() {
     echo "Installing Node.js via nvm..."
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash || handle_error "Failed to install nvm."
-
     # Source nvm script to make it available immediately
     export NVM_DIR="$HOME/.nvm"
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" || handle_error "Failed to source nvm."
-
     # Install Node.js version 22 using nvm
     nvm install 22 || handle_error "Failed to install Node.js v22."
-
     # Verify Node.js installation
     echo "Node.js version:"
     node -v || handle_error "Node.js is not installed."
@@ -56,10 +82,8 @@ install_nodejs() {
 install_rust() {
     echo "Installing Rust..."
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y || handle_error "Failed to install Rust."
-
     # Source rustup to make Rust available immediately
     export PATH="$HOME/.cargo/bin:$PATH"
-
     # Verify Rust installation
     echo "Rust version:"
     rustc --version || handle_error "Rust is not installed."
@@ -74,24 +98,19 @@ create_battery_service() {
         echo "Battery charge control is not supported on this system. Skipping service creation."
         return
     fi
-
     echo "Creating systemd service to set battery charge threshold to 80%..."
-
     # Create the systemd service file
     cat <<EOF | sudo tee /etc/systemd/system/battery-threshold.service > /dev/null
 [Unit]
 Description=Set battery charge threshold
 After=sysinit.target
 After=systemd-modules-load.service
-
 [Service]
 Type=oneshot
 ExecStart=/bin/bash -c "sleep 5 && echo 80 | sudo tee /sys/class/power_supply/BAT0/charge_control_end_threshold"
-
 [Install]
 WantedBy=multi-user.target
 EOF
-
     # Enable and start the service
     echo "Enabling and starting battery charge threshold service..."
     run_sudo systemctl enable battery-threshold.service
@@ -107,6 +126,7 @@ cleanup() {
 # Main script execution
 main() {
     update_system
+    remove_bloatware    # Added the bloatware removal step
     install_packages
     install_nodejs
     install_rust
