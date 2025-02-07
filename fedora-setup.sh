@@ -45,19 +45,18 @@ remove_bloatware() {
         "krfb"                      # Desktop Sharing
         "kwrite"                    # Text Editor (if you prefer other editors)
         "neochat"                   # Matrix Client
-        "spectacle"                 # Screenshot Tool (if you prefer other tools)
     )
     
     for app in "${bloatware[@]}"; do
         echo "Removing $app..."
-        run_sudo dnf remove -y "$app" || echo "Warning: Failed to remove $app"
+        run_sudo dnf remove "$app" -y || echo "Warning: Failed to remove $app"
     done
 }
 
 # Install essential packages
 install_packages() {
     echo "Installing required packages..."
-    run_sudo dnf install -y fastfetch git wget curl fish || handle_error "Failed to install packages."
+    run_sudo dnf install -y fastfetch git wget curl fish btop || handle_error "Failed to install packages."
 }
 
 # Install Node.js using nvm
