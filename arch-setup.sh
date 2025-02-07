@@ -22,7 +22,7 @@ update_system() {
 # Install essential packages
 install_packages() {
     echo "Installing required packages..."
-    run_sudo pacman -S --noconfirm fastfetch git wget curl flatpak fish sof-firmware bluez-utils power-profiles-daemon less okular spectacle
+    run_sudo pacman -S --noconfirm fastfetch git wget curl flatpak fish sof-firmware bluez-utils power-profiles-daemon less okular spectacle btop
 }
 # Install yay (AUR helper)
 install_yay() {
