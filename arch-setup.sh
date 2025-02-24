@@ -2,28 +2,34 @@
 # Log file for debugging
 LOGFILE="setup.log"
 exec > >(tee -a "$LOGFILE") 2>&1
+
 # Function to handle errors
 handle_error() {
     echo "Error: $1" >&2
     exit 1
 }
+
 # Prompt for sudo password once
 read -rsp "Enter your sudo password: " SUDO_PASSWORD
 echo
+
 # Function to run commands with sudo
 run_sudo() {
     echo "$SUDO_PASSWORD" | sudo -S "$@" || handle_error "Failed to run: $*"
 }
+
 # Update system
 update_system() {
     echo "Updating system..."
     run_sudo pacman -Syu --noconfirm
 }
+
 # Install essential packages
 install_packages() {
     echo "Installing required packages..."
     run_sudo pacman -S --noconfirm fastfetch git wget curl flatpak fish sof-firmware bluez-utils power-profiles-daemon less okular spectacle btop
 }
+
 # Install yay (AUR helper)
 install_yay() {
     echo "Installing yay (AUR helper)..."
@@ -34,6 +40,7 @@ install_yay() {
     makepkg -si --noconfirm || handle_error "Failed to build and install yay."
     cd ~ || handle_error "Failed to return to home directory."
 }
+
 # Install Node.js using nvm
 install_nodejs() {
     echo "Installing Node.js via nvm..."
@@ -51,6 +58,7 @@ install_nodejs() {
     echo "NPM version:"
     npm -v || handle_error "NPM is not installed."
 }
+
 # Install Rust using rustup
 install_rust() {
     echo "Installing Rust..."
@@ -63,6 +71,23 @@ install_rust() {
     echo "Cargo version:"
     cargo --version || handle_error "Cargo is not installed."
 }
+
+# Install latest Go
+install_latest_go() {
+    echo "Installing latest Go..."
+    LATEST_GO_URL=$(curl -s https://go.dev/VERSION?m=text)
+    GO_VERSION=$(echo "$LATEST_GO_URL" | sed 's/go//')
+    GO_FILENAME="go${GO_VERSION}.linux-amd64.tar.gz"
+    GO_URL="https://go.dev/dl/${GO_FILENAME}"
+
+    wget "$GO_URL" || handle_error "Failed to download Go."
+    run_sudo tar -C /usr/local -xzf "$GO_FILENAME" || handle_error "Failed to extract Go."
+    echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+    source ~/.bashrc
+    go version || handle_error "Go is not installed correctly."
+    rm "$GO_FILENAME" || handle_error "Failed to remove downloaded Go archive."
+}
+
 # Create a systemd service to set battery charge threshold to 80%
 create_battery_service() {
     echo "Checking if battery charge control is supported..."
@@ -88,11 +113,13 @@ EOF
     run_sudo systemctl enable battery-threshold.service
     run_sudo systemctl start battery-threshold.service
 }
+
 # Cleanup temporary files
 cleanup() {
     echo "Cleaning up temporary files..."
     rm -rf /tmp/yay || handle_error "Failed to clean up /tmp/yay."
 }
+
 # Main script execution
 main() {
     update_system
@@ -100,9 +127,11 @@ main() {
     install_yay
     install_nodejs
     install_rust
+    install_latest_go
     create_battery_service
     cleanup
     echo "Setup complete!"
 }
+
 # Run the main function
 main
