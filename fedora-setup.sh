@@ -28,25 +28,25 @@ update_system() {
 remove_bloatware() {
     echo "Removing KDE bloatware..."
     local bloatware=(
-        "akregator"                   # RSS Feed Reader
-        "dragon"                      # Video Player
-        "elisa-player"               # Music Player
-        "kaddressbook"               # Address Book
-        "kamoso"                     # Webcam Application
-        "kmail"                      # Email Client
-        "kmouth"                     # Speech Synthesizer
-        "knotes"                     # Sticky Notes
-        "kolourpaint"               # Paint Program
-        "konversation"              # IRC Client
-        "korganizer"                # Calendar/Organizer
-        "kpat"                      # Solitaire Card Game
-        "kpublictransport"          # Public Transport Information
-        "krdc"                      # Remote Desktop Client
-        "krfb"                      # Desktop Sharing
-        "kwrite"                    # Text Editor (if you prefer other editors)
-        "neochat"                   # Matrix Client
+        "akregator"
+        "dragon"
+        "elisa-player"
+        "kaddressbook"
+        "kamoso"
+        "kmail"
+        "kmouth"
+        "knotes"
+        "kolourpaint"
+        "konversation"
+        "korganizer"
+        "kpat"
+        "kpublictransport"
+        "krdc"
+        "krfb"
+        "kwrite"
+        "neochat"
     )
-    
+
     for app in "${bloatware[@]}"; do
         echo "Removing $app..."
         run_sudo dnf remove "$app" -y || echo "Warning: Failed to remove $app"
@@ -90,6 +90,22 @@ install_rust() {
     cargo --version || handle_error "Cargo is not installed."
 }
 
+# Install latest Go
+install_latest_go() {
+    echo "Installing latest Go..."
+    LATEST_GO_URL=$(curl -s https://go.dev/VERSION?m=text)
+    GO_VERSION=$(echo "$LATEST_GO_URL" | sed 's/go//')
+    GO_FILENAME="go${GO_VERSION}.linux-amd64.tar.gz"
+    GO_URL="https://go.dev/dl/${GO_FILENAME}"
+
+    wget "$GO_URL" || handle_error "Failed to download Go."
+    run_sudo tar -C /usr/local -xzf "$GO_FILENAME" || handle_error "Failed to extract Go."
+    echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+    source ~/.bashrc
+    go version || handle_error "Go is not installed correctly."
+    rm "$GO_FILENAME" || handle_error "Failed to remove downloaded Go archive."
+}
+
 # Create a systemd service to set battery charge threshold to 80%
 create_battery_service() {
     echo "Checking if battery charge control is supported..."
@@ -119,16 +135,17 @@ EOF
 # Cleanup temporary files
 cleanup() {
     echo "Cleaning up temporary files..."
-    run_sudo dnf autoremove || handle_error "Failed to clean up."
+    run_sudo dnf autoremove -y || handle_error "Failed to clean up."
 }
 
 # Main script execution
 main() {
     update_system
-    remove_bloatware    # Added the bloatware removal step
+    remove_bloatware
     install_packages
     install_nodejs
     install_rust
+    install_latest_go
     create_battery_service
     cleanup
     echo "Setup complete!"
