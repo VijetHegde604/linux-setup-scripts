@@ -98,17 +98,6 @@ install_pyenv() {
     echo "pyenv installed successfully."
 }
 
-# Install Jupyter Notebook
-install_jupyter() {
-    echo "Installing Jupyter Notebook..."
-    pyenv install 3.11.8 || handle_error "Failed to install Python 3.11.8."
-    pyenv global 3.11.8 || handle_error "Failed to set global python version"
-    python -m pip install --upgrade pip || handle_error "Failed to upgrade pip"
-    python -m pip install jupyter notebook || handle_error "Failed to install Jupyter Notebook."
-    echo "Jupyter Notebook installed successfully."
-
-}
-
 # Create a systemd service to set battery charge threshold to 80%
 create_battery_service() {
     echo "Checking if battery charge control is supported..."
@@ -150,7 +139,6 @@ main() {
     install_nodejs
     install_ble_sh
     install_pyenv
-    install_jupyter
     create_battery_service
     cleanup
     echo "Setup complete!"
