@@ -59,33 +59,25 @@ install_nodejs() {
     npm -v || handle_error "NPM is not installed."
 }
 
-# Install Rust using rustup
-install_rust() {
-    echo "Installing Rust..."
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y || handle_error "Failed to install Rust."
-    # Source rustup to make Rust available immediately
-    export PATH="$HOME/.cargo/bin:$PATH"
-    # Verify Rust installation
-    echo "Rust version:"
-    rustc --version || handle_error "Rust is not installed."
-    echo "Cargo version:"
-    cargo --version || handle_error "Cargo is not installed."
+# Install ble.sh bashline editor
+install_ble_sh() {
+    echo "Installing ble.sh bashline editor..."
+    git clone --recursive --depth 1 --shallow-submodules https://github.com/akinomyoga/ble.sh.git || handle_error "Failed to clone ble.sh repository."
+    make -C ble.sh install PREFIX=~/.local || handle_error "Failed to build and install ble.sh."
+    echo 'source ~/.local/share/blesh/ble.sh' >> ~/.bashrc || handle_error "Failed to add ble.sh to .bashrc."
+    source ~/.bashrc
+    echo "ble.sh installed successfully."
 }
 
-# Install latest Go
-install_latest_go() {
-    echo "Installing latest Go..."
-    LATEST_GO_URL=$(curl -s https://go.dev/VERSION?m=text)
-    GO_VERSION=$(echo "$LATEST_GO_URL" | sed 's/go//')
-    GO_FILENAME="go${GO_VERSION}.linux-amd64.tar.gz"
-    GO_URL="https://go.dev/dl/${GO_FILENAME}"
-
-    wget "$GO_URL" || handle_error "Failed to download Go."
-    run_sudo tar -C /usr/local -xzf "$GO_FILENAME" || handle_error "Failed to extract Go."
-    echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+# Install pyenv
+install_pyenv() {
+    echo "Installing pyenv..."
+    curl -fsSL https://pyenv.run | bash || handle_error "Failed to install pyenv."
+    echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
+    echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
+    echo 'eval "$(pyenv init --path)"' >> ~/.bashrc
     source ~/.bashrc
-    go version || handle_error "Go is not installed correctly."
-    rm "$GO_FILENAME" || handle_error "Failed to remove downloaded Go archive."
+    echo "pyenv installed successfully."
 }
 
 # Create a systemd service to set battery charge threshold to 80%
@@ -118,6 +110,7 @@ EOF
 cleanup() {
     echo "Cleaning up temporary files..."
     rm -rf /tmp/yay || handle_error "Failed to clean up /tmp/yay."
+    rm -rf ble.sh || handle_error "Failed to remove ble.sh directory"
 }
 
 # Main script execution
@@ -126,8 +119,8 @@ main() {
     install_packages
     install_yay
     install_nodejs
-    install_rust
-    #install_latest_go
+    install_ble_sh
+    install_pyenv
     create_battery_service
     cleanup
     echo "Setup complete!"
