@@ -145,7 +145,7 @@ main() {
     install_packages
     install_nodejs
     install_rust
-    install_latest_go
+    #install_latest_go
     create_battery_service
     cleanup
     echo "Setup complete!"
