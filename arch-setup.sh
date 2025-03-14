@@ -27,7 +27,7 @@ update_system() {
 # Install essential packages
 install_packages() {
     echo "Installing required packages..."
-    run_sudo pacman -S --noconfirm fastfetch git wget curl flatpak fish sof-firmware bluez-utils power-profiles-daemon less okular spectacle btop
+    run_sudo pacman -S --noconfirm fastfetch git wget curl flatpak sof-firmware bluez-utils tuned less noto-fonts okular spectacle btop
 }
 
 # Install yay (AUR helper)
@@ -106,6 +106,13 @@ EOF
     run_sudo systemctl start battery-threshold.service
 }
 
+# Install Jupyter Notebook
+install_jupyter() {
+    echo "Installing Jupyter Notebook..."
+    run_sudo pacman -S --noconfirm jupyter-notebook
+    echo "Jupyter Notebook installed successfully."
+}
+
 # Cleanup temporary files
 cleanup() {
     echo "Cleaning up temporary files..."
@@ -121,6 +128,7 @@ main() {
     install_nodejs
     install_ble_sh
     install_pyenv
+    install_jupyter
     create_battery_service
     cleanup
     echo "Setup complete!"
