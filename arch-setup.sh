@@ -27,7 +27,7 @@ update_system() {
 # Install essential packages
 install_packages() {
     echo "Installing required packages..."
-    run_sudo pacman -S --noconfirm fastfetch git wget curl flatpak sof-firmware bluez-utils tuned less noto-fonts okular spectacle btop
+    run_sudo pacman -S --noconfirm fastfetch git wget curl flatpak sof-firmware bluez-utils tuned tuned-ppd less noto-fonts okular spectacle btop
 }
 
 # Install yay (AUR helper)
