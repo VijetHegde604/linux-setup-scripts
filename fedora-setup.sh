@@ -56,7 +56,7 @@ remove_bloatware() {
 # Install essential packages
 install_packages() {
     echo "Installing required packages..."
-    run_sudo dnf install -y fastfetch git wget curl fish btop || handle_error "Failed to install packages."
+    run_sudo dnf install -y fastfetch git wget curl fish btop @development-tools || handle_error "Failed to install packages."
 }
 
 # Install Node.js using nvm
