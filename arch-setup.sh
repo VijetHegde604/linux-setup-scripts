@@ -27,7 +27,7 @@ update_system() {
 # Install essential packages
 install_packages() {
     echo "Installing required packages..."
-    run_sudo pacman -S --noconfirm fastfetch git wget curl flatpak sof-firmware bluez-utils tuned tuned-ppd less noto-fonts okular spectacle btop
+    run_sudo pacman -S --noconfirm fastfetch git wget curl flatpak sof-firmware bluez-utils tuned tuned-ppd less noto-fonts okular spectacle btop qt6-imageformats zsh
 }
 
 # Install yay (AUR helper)
@@ -126,7 +126,7 @@ main() {
     install_packages
     install_yay
     install_nodejs
-    install_ble_sh
+    #install_ble_sh
     install_pyenv
     install_jupyter
     create_battery_service
