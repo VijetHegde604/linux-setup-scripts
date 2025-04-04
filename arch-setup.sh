@@ -41,6 +41,13 @@ install_yay() {
     cd ~ || handle_error "Failed to return to home directory."
 }
 
+# Install AUR packages using yay
+install_aur_packages() {
+    echo "Installing Ghostty and Visual Studio Code from AUR..."
+    yay -S --noconfirm ghostty visual-studio-code-bin || handle_error "Failed to install AUR packages."
+    echo "AUR packages installed successfully."
+}
+
 # Install Node.js using nvm
 install_nodejs() {
     echo "Installing Node.js via nvm..."
@@ -59,16 +66,6 @@ install_nodejs() {
     npm -v || handle_error "NPM is not installed."
 }
 
-# Install ble.sh bashline editor
-install_ble_sh() {
-    echo "Installing ble.sh bashline editor..."
-    git clone --recursive --depth 1 --shallow-submodules https://github.com/akinomyoga/ble.sh.git || handle_error "Failed to clone ble.sh repository."
-    make -C ble.sh install PREFIX=~/.local || handle_error "Failed to build and install ble.sh."
-    echo 'source ~/.local/share/blesh/ble.sh' >> ~/.bashrc || handle_error "Failed to add ble.sh to .bashrc."
-    source ~/.bashrc
-    echo "ble.sh installed successfully."
-}
-
 # Install pyenv
 install_pyenv() {
     echo "Installing pyenv..."
@@ -78,6 +75,31 @@ install_pyenv() {
     echo 'eval "$(pyenv init --path)"' >> ~/.bashrc
     source ~/.bashrc
     echo "pyenv installed successfully."
+}
+
+# Install zoxide
+install_zoxide() {
+    echo "Installing zoxide..."
+    curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh || handle_error "Failed to install zoxide."
+    echo "zoxide installed successfully."
+}
+
+# Install Zed editor
+install_zed() {
+    echo "Installing Zed editor..."
+    curl -f https://zed.dev/install.sh | sh || handle_error "Failed to install Zed editor."
+    echo "Zed editor installed successfully."
+}
+
+# Configure zsh
+configure_zsh() {
+    echo "Configuring zsh..."
+    if [ -f "./zshrc" ]; then
+        cp ./zshrc ~/.zshrc || handle_error "Failed to copy zshrc to home directory."
+        echo "zsh configuration copied successfully."
+    else
+        echo "Warning: zshrc file not found in current directory. Skipping zsh configuration."
+    fi
 }
 
 # Create a systemd service to set battery charge threshold to 80%
@@ -117,7 +139,6 @@ install_jupyter() {
 cleanup() {
     echo "Cleaning up temporary files..."
     rm -rf /tmp/yay || handle_error "Failed to clean up /tmp/yay."
-    rm -rf ble.sh || handle_error "Failed to remove ble.sh directory"
 }
 
 # Main script execution
@@ -125,10 +146,13 @@ main() {
     update_system
     install_packages
     install_yay
+    install_aur_packages
     install_nodejs
-    #install_ble_sh
     install_pyenv
+    install_zoxide
+    install_zed
     install_jupyter
+    configure_zsh
     create_battery_service
     cleanup
     echo "Setup complete!"
