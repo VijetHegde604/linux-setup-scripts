@@ -45,6 +45,11 @@ remove_bloatware() {
         "krfb"
         "kwrite"
         "neochat"
+        "libreoffice-*"
+        "kmahjongg"
+        "kmines"
+        "skanpage"
+        "pinyin"
     )
 
     for app in "${bloatware[@]}"; do
@@ -56,7 +61,7 @@ remove_bloatware() {
 # Install essential packages
 install_packages() {
     echo "Installing required packages..."
-    run_sudo dnf install -y fastfetch git wget curl zsh btop @development-tools libffi-devel ncurses-devel readline-devel sqlite-devel tk-devel gdbm-devel libdb-devel bzip2-devel zlib-devel xz-devel git-credential-libsecret || handle_error "Failed to install packages."
+    run_sudo dnf install -y fastfetch git wget curl zsh btop @development-tools libffi-devel ncurses-devel readline-devel sqlite-devel tk-devel gdbm-devel libdb-devel bzip2-devel zlib-devel xz-devel || handle_error "Failed to install packages."
 }
 
 # Install Node.js using nvm
@@ -77,16 +82,6 @@ install_nodejs() {
     npm -v || handle_error "NPM is not installed."
 }
 
-# Install ble.sh bashline editor
-install_ble_sh() {
-    echo "Installing ble.sh bashline editor..."
-    git clone --recursive --depth 1 --shallow-submodules https://github.com/akinomyoga/ble.sh.git || handle_error "Failed to clone ble.sh repository."
-    make -C ble.sh install PREFIX=~/.local || handle_error "Failed to build and install ble.sh."
-    echo 'source ~/.local/share/blesh/ble.sh' >> ~/.bashrc || handle_error "Failed to add ble.sh to .bashrc."
-    source ~/.bashrc
-    echo "ble.sh installed successfully."
-}
-
 # Install pyenv
 install_pyenv() {
     echo "Installing pyenv..."
@@ -96,6 +91,17 @@ install_pyenv() {
     echo 'eval "$(pyenv init --path)"' >> ~/.bashrc
     source ~/.bashrc
     echo "pyenv installed successfully."
+}
+
+# install zoxide
+install_zoxide() {
+    curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh || handle_error "Failed to install zoxide."
+    echo 'eval "$(zoxide init bash)"' >> ~/.bashrc
+}
+
+# creating zshrc
+create_zshrc() {
+    cp ./zshrc ~/.zshrc
 }
 
 # Create a systemd service to set battery charge threshold to 80%
@@ -137,8 +143,9 @@ main() {
     remove_bloatware
     install_packages
     install_nodejs
-    install_ble_sh
     install_pyenv
+    install_zoxide
+    create_zshrc
     create_battery_service
     cleanup
     echo "Setup complete!"
