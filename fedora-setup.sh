@@ -137,6 +137,30 @@ cleanup() {
     rm -rf ble.sh || handle_error "Failed to remove ble.sh directory"
 }
 
+# install zed
+install_zed() {
+    curl -f https://zed.dev/install.sh | sh
+}
+
+# installing vscode
+install_vscode() {
+    run_sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+    echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" | sudo tee /etc/yum.repos.d/vscode.repo > /dev/null
+
+    run_sudo dnf check-update
+    run_sudo dnf install code || handle_error "vscode installation failed"
+}
+
+# installing gcm
+install_gcm() {
+    curl -LO "https://github.com/git-ecosystem/git-credential-manager/releases/download/v2.6.1/gcm-linux_amd64.2.6.1.tar.gz"
+
+    run_sudo tar -xvf ./gcm-linux_amd64.2.6.1.tar.gz -C /usr/local/bin
+    git-credential-manager configure
+
+    git config --global credential.credentialStore cache
+}
+
 # Main script execution
 main() {
     update_system
@@ -145,7 +169,10 @@ main() {
     install_nodejs
     install_pyenv
     install_zoxide
+    install_zed
     create_zshrc
+    install_vscode
+    install_gcm
     create_battery_service
     cleanup
     echo "Setup complete!"
