@@ -148,7 +148,7 @@ install_vscode() {
     echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" | sudo tee /etc/yum.repos.d/vscode.repo > /dev/null
 
     run_sudo dnf check-update
-    run_sudo dnf install code || handle_error "vscode installation failed"
+    run_sudo dnf install -y code || handle_error "vscode installation failed"
 }
 
 # installing gcm
@@ -168,9 +168,9 @@ main() {
     install_packages
     install_nodejs
     install_pyenv
+    create_zshrc
     install_zoxide
     install_zed
-    create_zshrc
     install_vscode
     install_gcm
     create_battery_service
