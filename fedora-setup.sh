@@ -161,6 +161,17 @@ install_gcm() {
     git config --global credential.credentialStore cache
 }
 
+# install ghostty
+install_ghostty() {
+    run_sudo dnf copr enable pgdev/ghostty
+    run_sudo dnf install -y ghostty
+}
+
+# installing tailscale
+install_tailscale() {
+    run_sudo curl -fsSL https://tailscale.com/install.sh | sh
+}
+
 # Main script execution
 main() {
     update_system
@@ -172,8 +183,10 @@ main() {
     install_zoxide
     install_zed
     install_vscode
+    install_ghostty
     install_gcm
     create_battery_service
+    install_tailscale
     cleanup
     echo "Setup complete!"
 }
