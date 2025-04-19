@@ -163,7 +163,7 @@ install_gcm() {
 
 # install ghostty
 install_ghostty() {
-    run_sudo dnf copr enable pgdev/ghostty
+    run_sudo dnf copr enable pgdev/ghostty -y
     run_sudo dnf install -y ghostty
 }
 
