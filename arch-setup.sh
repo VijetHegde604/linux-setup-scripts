@@ -141,6 +141,21 @@ cleanup() {
     rm -rf /tmp/yay || handle_error "Failed to clean up /tmp/yay."
 }
 
+# installing tailscale
+install_tailscale() {
+    run_sudo curl -fsSL https://tailscale.com/install.sh | sh
+}
+
+# installing gcm
+install_gcm() {
+    curl -LO "https://github.com/git-ecosystem/git-credential-manager/releases/download/v2.6.1/gcm-linux_amd64.2.6.1.tar.gz"
+
+    run_sudo tar -xvf ./gcm-linux_amd64.2.6.1.tar.gz -C /usr/local/bin
+    git-credential-manager configure
+
+    git config --global credential.credentialStore cache
+}
+
 # Main script execution
 main() {
     update_system
@@ -154,6 +169,8 @@ main() {
     install_jupyter
     configure_zsh
     create_battery_service
+    install_tailscale
+    install_gcm
     cleanup
     echo "Setup complete!"
 }
