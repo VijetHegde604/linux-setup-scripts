@@ -16,3 +16,17 @@ eval "$(pyenv init --path)"
 
 #zoxide
 eval "$(zoxide init zsh)"
+
+# ZSH prompt config
+setopt PROMPT_SUBST
+
+format_current_git_branch() {
+  local BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+  if [[ -n ${BRANCH} ]] ; then
+    echo "(${BRANCH})"
+  fi
+}
+
+export NEWLINE=$'\n'
+
+export PROMPT='%n@%m %~ $(format_current_git_branch) ${NEWLINE}%# '
