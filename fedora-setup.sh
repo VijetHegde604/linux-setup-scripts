@@ -120,7 +120,7 @@ After=sysinit.target
 After=systemd-modules-load.service
 [Service]
 Type=oneshot
-ExecStart=/bin/bash -c "sleep 5 && echo 80 | sudo tee /sys/class/power_supply/BAT0/charge_control_end_threshold"
+ExecStart=/bin/bash -c "sleep 1 && echo 80 | sudo tee /sys/class/power_supply/BAT0/charge_control_end_threshold"
 [Install]
 WantedBy=multi-user.target
 EOF
@@ -151,16 +151,6 @@ install_vscode() {
     run_sudo dnf install -y code || handle_error "vscode installation failed"
 }
 
-# installing gcm
-install_gcm() {
-    curl -LO "https://github.com/git-ecosystem/git-credential-manager/releases/download/v2.6.1/gcm-linux_amd64.2.6.1.tar.gz"
-
-    run_sudo tar -xvf ./gcm-linux_amd64.2.6.1.tar.gz -C /usr/local/bin
-    git-credential-manager configure
-
-    git config --global credential.credentialStore cache
-}
-
 # install ghostty
 install_ghostty() {
     run_sudo dnf copr enable pgdev/ghostty -y
@@ -184,7 +174,6 @@ main() {
     install_zed
     install_vscode
     install_ghostty
-    install_gcm
     create_battery_service
     install_tailscale
     cleanup
