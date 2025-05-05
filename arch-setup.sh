@@ -118,7 +118,7 @@ After=sysinit.target
 After=systemd-modules-load.service
 [Service]
 Type=oneshot
-ExecStart=/bin/bash -c "sleep 5 && echo 80 | sudo tee /sys/class/power_supply/BAT0/charge_control_end_threshold"
+ExecStart=/bin/bash -c "sleep 1 && echo 80 | sudo tee /sys/class/power_supply/BAT0/charge_control_end_threshold"
 [Install]
 WantedBy=multi-user.target
 EOF
@@ -126,13 +126,6 @@ EOF
     echo "Enabling and starting battery charge threshold service..."
     run_sudo systemctl enable battery-threshold.service
     run_sudo systemctl start battery-threshold.service
-}
-
-# Install Jupyter Notebook
-install_jupyter() {
-    echo "Installing Jupyter Notebook..."
-    run_sudo pacman -S --noconfirm jupyter-notebook
-    echo "Jupyter Notebook installed successfully."
 }
 
 # Cleanup temporary files
@@ -146,16 +139,6 @@ install_tailscale() {
     run_sudo curl -fsSL https://tailscale.com/install.sh | sh
 }
 
-# installing gcm
-install_gcm() {
-    curl -LO "https://github.com/git-ecosystem/git-credential-manager/releases/download/v2.6.1/gcm-linux_amd64.2.6.1.tar.gz"
-
-    run_sudo tar -xvf ./gcm-linux_amd64.2.6.1.tar.gz -C /usr/local/bin
-    git-credential-manager configure
-
-    git config --global credential.credentialStore cache
-}
-
 # Main script execution
 main() {
     update_system
@@ -166,11 +149,9 @@ main() {
     install_pyenv
     install_zoxide
     install_zed
-    install_jupyter
     configure_zsh
     create_battery_service
     install_tailscale
-    install_gcm
     cleanup
     echo "Setup complete!"
 }
