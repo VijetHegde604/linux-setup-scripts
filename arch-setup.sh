@@ -27,7 +27,7 @@ update_system() {
 # Install essential packages
 install_packages() {
     echo "Installing required packages..."
-    run_sudo pacman -S --noconfirm fastfetch git wget curl flatpak sof-firmware bluez-utils tuned tuned-ppd less noto-fonts okular spectacle btop qt6-imageformats zsh
+    run_sudo pacman -S --noconfirm fastfetch git wget curl flatpak sof-firmware bluez-utils tuned tuned-ppd less noto-fonts okular spectacle btop qt6-imageformats zsh timeshift inotify-tools
 }
 
 # Install yay (AUR helper)
@@ -43,8 +43,8 @@ install_yay() {
 
 # Install AUR packages using yay
 install_aur_packages() {
-    echo "Installing Ghostty and Visual Studio Code from AUR..."
-    yay -S --noconfirm ghostty visual-studio-code-bin || handle_error "Failed to install AUR packages."
+    echo "Installing Ghostty and Visual Studio Code  and Timeshift autosnap from AUR..."
+    yay -S --noconfirm ghostty visual-studio-code-bin timeshift-autosnap || handle_error "Failed to install AUR packages."
     echo "AUR packages installed successfully."
 }
 
