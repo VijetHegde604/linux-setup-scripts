@@ -134,7 +134,6 @@ EOF
 cleanup() {
     echo "Cleaning up temporary files..."
     run_sudo dnf autoremove -y || handle_error "Failed to clean up."
-    rm -rf ble.sh || handle_error "Failed to remove ble.sh directory"
 }
 
 # install zed
