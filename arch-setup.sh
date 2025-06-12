@@ -94,6 +94,7 @@ install_zed() {
 # Configure zsh
 configure_zsh() {
     echo "Configuring zsh..."
+    cd ~/linux-setup-scripts
     if [ -f "./zshrc" ]; then
         cp ./zshrc ~/.zshrc || handle_error "Failed to copy zshrc to home directory."
         echo "zsh configuration copied successfully."
