@@ -30,3 +30,5 @@ format_current_git_branch() {
 export NEWLINE=$'\n'
 
 export PROMPT='%n@%m %~ $(format_current_git_branch) ${NEWLINE}%# '
+
+export TERM='xterm'
