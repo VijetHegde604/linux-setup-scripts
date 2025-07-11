@@ -1,11 +1,39 @@
 #!/bin/bash
-# Log file for debugging
 LOGFILE="setup.log"
 exec > >(tee -a "$LOGFILE") 2>&1
 
-# Function to handle errors
+# Colors
+bold=$(tput bold)
+normal=$(tput sgr0)
+red=$(tput setaf 1)
+green=$(tput setaf 2)
+yellow=$(tput setaf 3)
+blue=$(tput setaf 4)
+cyan=$(tput setaf 6)
+purple=$(tput setaf 5)
+
+info()    { echo "${cyan}ℹ️ $1${normal}"; }
+success() { echo "${green}✅ $1${normal}"; }
+warn()    { echo "${yellow}⚠️ $1${normal}"; }
+error()   { echo "${red}❌ $1${normal}"; }
+section() { echo "${purple}\n====== 🚀 $1 ======${normal}"; }
+
+spinner() {
+    local pid=$!
+    local delay=0.1
+    local spinstr='|/-\'
+    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
+    printf "    \b\b\b\b"
+}
+
 handle_error() {
-    echo "Error: $1" >&2
+    error "$1"
     exit 1
 }
 
@@ -13,149 +41,112 @@ handle_error() {
 read -rsp "Enter your sudo password: " SUDO_PASSWORD
 echo
 
-# Function to run commands with sudo
 run_sudo() {
-    echo "$SUDO_PASSWORD" | sudo -S "$@" || handle_error "Failed to run: $*"
+    echo "$SUDO_PASSWORD" | sudo -S "$@" || handle_error "Failed: $*"
 }
 
-# Update system
-update_system() {
-    echo "Updating system..."
-    run_sudo pacman -Syu --noconfirm
-}
+section "Updating system"
+run_sudo pacman -Syu --noconfirm & spinner
+success "System updated!"
 
-# Install essential packages
-install_packages() {
-    echo "Installing required packages..."
-    run_sudo pacman -S --noconfirm fastfetch git wget curl flatpak sof-firmware bluez-utils tuned tuned-ppd less noto-fonts okular spectacle btop qt6-imageformats zsh timeshift inotify-tools
-}
+section "Installing essential packages"
+run_sudo pacman -S --noconfirm \
+    base-devel git wget curl flatpak sof-firmware less \
+    bluez bluez-utils inotify-tools fastfetch \
+    noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-indic-otf \
+    okular spectacle btop qt6-imageformats zsh timeshift \
+    reflector pacman-contrib & spinner
+success "Installed essential packages"
 
-# Install yay (AUR helper)
-install_yay() {
-    echo "Installing yay (AUR helper)..."
-    run_sudo pacman -S --noconfirm base-devel git
-    cd /tmp || handle_error "Failed to change to /tmp directory."
-    git clone https://aur.archlinux.org/yay.git || handle_error "Failed to clone yay repository."
-    cd yay || handle_error "Failed to change to yay directory."
-    makepkg -si --noconfirm || handle_error "Failed to build and install yay."
-    cd ~ || handle_error "Failed to return to home directory."
-}
+section "Configuring reflector with India mirrors"
+run_sudo reflector --country India --age 12 --protocol https --sort rate --save /etc/pacman.d/mirrorlist --number 6 & spinner
+run_sudo systemctl enable --now reflector.timer
+success "Reflector set up & enabled"
 
-# Install AUR packages using yay
-install_aur_packages() {
-    echo "Installing Ghostty and Visual Studio Code  and Timeshift autosnap from AUR..."
-    yay -S --noconfirm ghostty visual-studio-code-bin timeshift-autosnap || handle_error "Failed to install AUR packages."
-    echo "AUR packages installed successfully."
-}
+section "Enabling paccache.timer"
+run_sudo systemctl enable --now paccache.timer
+success "paccache.timer enabled"
 
-# Install Node.js using nvm
-install_nodejs() {
-    echo "Installing Node.js via nvm..."
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash || handle_error "Failed to install nvm."
-    # Source nvm script to make it available immediately
-    export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" || handle_error "Failed to source nvm."
-    # Install Node.js version 22 using nvm
-    nvm install 22 || handle_error "Failed to install Node.js v22."
-    # Verify Node.js installation
-    echo "Node.js version:"
-    node -v || handle_error "Node.js is not installed."
-    echo "NVM current version:"
-    nvm current || handle_error "NVM is not working."
-    echo "NPM version:"
-    npm -v || handle_error "NPM is not installed."
-}
+section "Enabling Bluetooth"
+run_sudo systemctl enable --now bluetooth
+success "Bluetooth service running"
 
-# Install pyenv
-install_pyenv() {
-    echo "Installing pyenv..."
-    curl -fsSL https://pyenv.run | bash || handle_error "Failed to install pyenv."
-    echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
-    echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
-    echo 'eval "$(pyenv init --path)"' >> ~/.bashrc
-    source ~/.bashrc
-    echo "pyenv installed successfully."
-}
+section "Installing paru (AUR helper)"
+cd /tmp || handle_error "cd /tmp failed"
+git clone https://aur.archlinux.org/paru.git & spinner
+cd paru || handle_error "cd paru failed"
+makepkg -si --noconfirm & spinner
+cd ~
+success "paru installed"
 
-# Install zoxide
-install_zoxide() {
-    echo "Installing zoxide..."
-    curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh || handle_error "Failed to install zoxide."
-    echo "zoxide installed successfully."
-}
+section "Installing AUR packages"
+paru -S --noconfirm ghostty visual-studio-code-bin timeshift-autosnap auto-cpufreq & spinner
+success "AUR packages installed"
 
-# Install Zed editor
-install_zed() {
-    echo "Installing Zed editor..."
-    curl -f https://zed.dev/install.sh | sh || handle_error "Failed to install Zed editor."
-    echo "Zed editor installed successfully."
-}
+section "Enabling auto-cpufreq"
+run_sudo systemctl enable --now auto-cpufreq
+success "auto-cpufreq running"
 
-# Configure zsh
-configure_zsh() {
-    echo "Configuring zsh..."
-    cd ~/linux-setup-scripts
-    if [ -f "./zshrc" ]; then
-        cp ./zshrc ~/.zshrc || handle_error "Failed to copy zshrc to home directory."
-        echo "zsh configuration copied successfully."
-    else
-        echo "Warning: zshrc file not found in current directory. Skipping zsh configuration."
-    fi
-}
+section "Installing Node via nvm"
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash & spinner
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+nvm install 22 & spinner
+success "Node.js installed via nvm"
 
-# Create a systemd service to set battery charge threshold to 80%
-create_battery_service() {
-    echo "Checking if battery charge control is supported..."
-    if [ ! -f /sys/class/power_supply/BAT0/charge_control_end_threshold ]; then
-        echo "Battery charge control is not supported on this system. Skipping service creation."
-        return
-    fi
-    echo "Creating systemd service to set battery charge threshold to 80%..."
-    # Create the systemd service file
+section "Installing pyenv"
+curl -fsSL https://pyenv.run | bash & spinner
+echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
+echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
+echo 'eval "$(pyenv init --path)"' >> ~/.bashrc
+source ~/.bashrc
+success "pyenv installed"
+
+section "Installing zoxide"
+curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh & spinner
+success "zoxide installed"
+
+section "Installing Zed editor"
+curl -f https://zed.dev/install.sh | sh & spinner
+success "Zed installed"
+
+section "Changing default shell to zsh"
+run_sudo chsh -s "$(which zsh)" "$USER"
+success "Default shell set to zsh"
+
+section "Configuring zsh"
+cd ~/linux-setup-scripts
+if [ -f "./zshrc" ]; then
+    cp ./zshrc ~/.zshrc
+    success "zsh configuration applied"
+else
+    warn "No zshrc found in linux-setup-scripts, skipping"
+fi
+
+section "Setting battery threshold"
+if [ -f /sys/class/power_supply/BAT0/charge_control_end_threshold ]; then
     cat <<EOF | sudo tee /etc/systemd/system/battery-threshold.service > /dev/null
 [Unit]
 Description=Set battery charge threshold
 After=sysinit.target
-After=systemd-modules-load.service
 [Service]
 Type=oneshot
-ExecStart=/bin/bash -c "sleep 1 && echo 80 | sudo tee /sys/class/power_supply/BAT0/charge_control_end_threshold"
+ExecStart=/bin/bash -c "sleep 1 && echo 80 | tee /sys/class/power_supply/BAT0/charge_control_end_threshold"
 [Install]
 WantedBy=multi-user.target
 EOF
-    # Enable and start the service
-    echo "Enabling and starting battery charge threshold service..."
-    run_sudo systemctl enable battery-threshold.service
-    run_sudo systemctl start battery-threshold.service
-}
+    run_sudo systemctl enable --now battery-threshold.service
+    success "Battery charge threshold service enabled"
+else
+    warn "Battery charge control not supported on this laptop"
+fi
 
-# Cleanup temporary files
-cleanup() {
-    echo "Cleaning up temporary files..."
-    rm -rf /tmp/yay || handle_error "Failed to clean up /tmp/yay."
-}
+section "Installing Tailscale"
+run_sudo curl -fsSL https://tailscale.com/install.sh | sh & spinner
+success "Tailscale installed"
 
-# installing tailscale
-install_tailscale() {
-    run_sudo curl -fsSL https://tailscale.com/install.sh | sh
-}
+section "Cleaning up"
+rm -rf /tmp/paru
+success "Cleaned up build files"
 
-# Main script execution
-main() {
-    update_system
-    install_packages
-    install_yay
-    install_aur_packages
-    install_nodejs
-    install_pyenv
-    install_zoxide
-    install_zed
-    configure_zsh
-    create_battery_service
-    install_tailscale
-    cleanup
-    echo "Setup complete!"
-}
-
-# Run the main function
-main
+echo -e "${green}🎉 All done! Reboot recommended.${normal}"
