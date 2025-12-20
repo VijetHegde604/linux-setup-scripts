@@ -1,0 +1,170 @@
+# ─────────────────────────────────────
+# Global settings
+# ─────────────────────────────────────
+add_newline = true
+palette = "material_vijet"
+
+format = """
+[${username}@${hostname} ](fg:muted)[$directory](fg:dir) \
+$python$nodejs$rust$golang$package$git_branch$git_status$cmd_duration
+$character
+"""
+
+right_format = """
+$time$battery
+"""
+
+# ─────────────────────────────────────
+# Palette (Material-ish colors)
+# ─────────────────────────────────────
+[palettes.material_vijet]
+muted = "#78828c"
+accent = "#b5d0ff"
+accent_dim = "#8caac8"
+danger = "#ff6b6b"
+good = "#9ccc65"
+dir = "#8caac8"
+subtle = "#9aa5b1"
+
+# ─────────────────────────────────────
+# Core modules
+# ─────────────────────────────────────
+
+[username]
+show_always = true
+format = "[$user]($style)"
+style_user = "fg:muted"
+
+[hostname]
+ssh_only = false
+format = "[$hostname]($style)"
+style = "fg:muted"
+
+[directory]
+truncation_length = 3
+truncate_to_repo = false
+style = "fg:dir"
+read_only = " "
+format = "[$path]($style)[$read_only]($style)"
+fish_style_pwd_dir_length = 1
+
+[git_branch]
+symbol = " "
+format = " [$symbol$branch]($style)"
+style = "fg:accent"
+
+[git_status]
+format = "[( $all_status$ahead_behind)]($style)"
+style = "fg:accent"
+conflicted = "!"
+ahead = "↑${count}"
+behind = "↓${count}"
+diverged = "↑${ahead_count}↓${behind_count}"
+up_to_date = ""
+untracked = "*"
+stashed = "$"
+modified = "*"
+staged = "+"
+renamed = "r"
+deleted = "x"
+
+[cmd_duration]
+min_time = 500
+show_milliseconds = false
+format = " [⏱ $duration]($style)"
+style = "fg:accent_dim"
+
+[character]
+success_symbol = "[❯](fg:accent) "
+error_symbol = "[❯](fg:danger) "
+vicmd_symbol = "[❮](fg:accent) "
+disabled = false
+
+[status]
+format = " [✘ $status]($style)"
+style = "fg:danger"
+disabled = false
+map_symbol = true
+pipestatus = true
+
+# ─────────────────────────────────────
+# Language modules
+# show only icon/venv name
+# appear automatically only in a matching project
+# ─────────────────────────────────────
+
+[python]
+symbol = " "
+format = " [$symbol$virtualenv]($style)"
+style = "fg:accent_dim"
+pyenv_version_name = false
+detect_extensions = ["py"]
+detect_files = ["pyproject.toml", "requirements.txt", "Pipfile", "poetry.lock"]
+
+[nodejs]
+symbol = " "
+format = " [$symbol]($style)"
+style = "fg:accent_dim"
+detect_extensions = ["js", "ts", "mjs", "cjs"]
+detect_files = ["package.json", "node_modules"]
+
+[rust]
+symbol = " "
+format = " [$symbol]($style)"
+style = "fg:accent_dim"
+
+[golang]
+symbol = " "
+format = " [$symbol]($style)"
+style = "fg:accent_dim"
+
+[package]
+symbol = "󰏗 "
+format = " [$symbol]($style)"
+style = "fg:subtle"
+disabled = false
+
+[docker_context]
+symbol = " "
+format = " [$symbol$context]($style)"
+style = "fg:subtle"
+only_with_files = true
+
+[kubernetes]
+symbol = "☸ "
+format = " [$symbol$context(::$namespace)]($style)"
+style = "fg:subtle"
+disabled = false
+
+# ─────────────────────────────────────
+# Right side: time, battery
+# ─────────────────────────────────────
+
+[time]
+disabled = false
+time_format = "%H:%M"
+format = "[$time]($style) "
+style = "fg:subtle"
+
+[battery]
+disabled = false
+format = "[$symbol $percentage]($style) "
+full_symbol = ""
+charging_symbol = ""
+discharging_symbol = ""
+unknown_symbol = ""
+empty_symbol = ""
+[[battery.display]]
+threshold = 20
+style = "fg:danger"
+[[battery.display]]
+threshold = 100
+style = "fg:subtle"
+
+[os]
+disabled = false
+format = "[$symbol]($style)"
+style = "fg:subtle"
+
+[shell]
+disabled = true
