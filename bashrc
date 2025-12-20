@@ -26,6 +26,8 @@ unset rc
 
 # Aliases
 alias cd="z"
+alias ls='lsd'
+alias lt='lsd --tree'
 
 # Starship
 eval "$(starship init bash)"
@@ -38,4 +40,3 @@ eval "$(zoxide init bash)"
 
 # TERM
 export TERM=xterm-256color
-
