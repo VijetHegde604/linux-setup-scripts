@@ -53,7 +53,7 @@ install_base_packages() {
         zed \
         fastfetch \
         qt6-imageformats \
-        eza \
+        lsd
 }
 
 enable_services() {
