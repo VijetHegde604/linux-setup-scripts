@@ -130,6 +130,11 @@ install_starship() {
 set_starship_config() {
     cp ./starship.toml ~/.config/starship.toml
 }
+
+configure_bash() {
+    cp ./bashrc ~/.bashrc
+}
+
 # --------------------------------------------------
 # Laptop specific
 # --------------------------------------------------
@@ -184,6 +189,7 @@ main() {
 
     install_starship
     set_starship_config
+    configure_bash
 
     configure_battery_limit
     cleanup
