@@ -45,11 +45,10 @@ install_base_packages() {
         bluez-utils \
         reflector \
         pacman-contrib \
-        zsh \
-        timeshift \
         btop \
         noto-fonts \
         noto-fonts-emoji \
+	noto-fonts-cjk \
         zed \
         fastfetch \
         qt6-imageformats \
@@ -69,10 +68,8 @@ configure_reflector() {
 
     sudo reflector \
         --country India \
-        --age 12 \
-        --protocol https \
         --sort rate \
-        --number 6 \
+        --latest 6 \
         --save /etc/pacman.d/mirrorlist
 }
 
@@ -98,7 +95,8 @@ install_aur_packages() {
 
     paru -S --noconfirm \
         visual-studio-code-bin \
-        timeshift-autosnap
+        snapper \ 
+	snapper-support
 }
 
 # --------------------------------------------------
@@ -128,7 +126,7 @@ install_starship() {
 }
 
 set_starship_config() {
-    cp ./starship.toml ~/.config/starship.toml
+    cp ~/linux-setup-scripts/starship.toml ~/.config/starship.toml
 }
 
 configure_bash() {
@@ -176,14 +174,14 @@ cleanup() {
 # Main
 # --------------------------------------------------
 main() {
-    require_sudo
-    update_system
-    install_base_packages
-    configure_reflector
-    enable_services
+#    require_sudo
+#    update_system
+#    install_base_packages
+#    configure_reflector
+#    enable_services
 
-    install_paru
-    install_aur_packages
+#    install_paru
+#    install_aur_packages
 
     install_mise
 

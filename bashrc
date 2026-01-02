@@ -28,6 +28,8 @@ unset rc
 alias cd="z"
 alias ls='lsd'
 alias lt='lsd --tree'
+alias start-docker='sudo systemctl start docker'
+alias stop-docker='sudo systemctl stop docker && sudo systemctl stop docker.socket'
 
 # Starship
 eval "$(starship init bash)"
