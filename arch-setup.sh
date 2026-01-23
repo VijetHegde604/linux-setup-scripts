@@ -48,11 +48,11 @@ install_base_packages() {
         btop \
         noto-fonts \
         noto-fonts-emoji \
-	noto-fonts-cjk \
+        noto-fonts-cjk \
         zed \
         fastfetch \
         qt6-imageformats \
-        lsd
+        lsd \
 }
 
 enable_services() {
@@ -93,10 +93,12 @@ install_paru() {
 install_aur_packages() {
     log "Installing AUR packages"
 
-    paru -S --noconfirm \
-        visual-studio-code-bin \
+    paru -S --noconfirm --needed \
+        snap-pac \
         snapper \
-	snapper-support
+        snapper-support \
+        limine-snapper-sync \
+
 }
 
 # --------------------------------------------------
@@ -174,8 +176,8 @@ install_custom_scripts() {
     # Copy the file and rename it to 'mkapp'
     # Assuming the script is in your current directory
     if [ -f "./create-webapp.sh" ]; then
-        cp "./create-webapp.sh" "$HOME/.local/bin/mkapp"
-        chmod +x "$HOME/.local/bin/mkapp"
+        cp "./create-webapp.sh" "$HOME/.local/bin/create-webapp"
+        chmod +x "$HOME/.local/bin/create-webapp"
         log "mkapp installed to ~/.local/bin"
     else
         warn "create-webapp.sh not found in current directory, skipping."
