@@ -5,6 +5,8 @@
 
 echo "--- Web App Creator ---"
 
+CHOSEN_BROWSER="brave"
+
 # 1. Collect User Input
 read -p "Enter App Name (e.g., ChatGPT): " APP_NAME
 read -p "Enter URL (e.g., https://chatgpt.com): " APP_URL
@@ -34,8 +36,8 @@ cat <<EOF >"$DESKTOP_FILE"
 Version=1.0
 Type=Application
 Name=$APP_NAME
-Comment=Web Application launched via Chromium
-Exec=brave --app=$APP_URL --class=webapp-$APP_SLUG
+Comment=Web Application launched via $CHOSEN_BROWSER
+Exec=$CHOSEN_BROWSER --app=$APP_URL --class=webapp-$APP_SLUG
 Icon=$ICON_VALUE
 Terminal=false
 Categories=Network;WebBrowser;
@@ -47,7 +49,4 @@ chmod +x "$DESKTOP_FILE"
 echo "----------------------------------------"
 echo "SUCCESS: $APP_NAME has been created!"
 echo "Desktop File: $DESKTOP_FILE"
-echo "Window Class: webapp-$APP_SLUG"
 echo "----------------------------------------"
-echo "To add a Hyprland bind, add this to your config:"
-echo "bind = SUPER SHIFT, <key>, exec, chromium --app=$APP_URL --class=webapp-$APP_SLUG"
