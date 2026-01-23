@@ -95,7 +95,7 @@ install_aur_packages() {
 
     paru -S --noconfirm \
         visual-studio-code-bin \
-        snapper \ 
+        snapper \
 	snapper-support
 }
 
@@ -163,6 +163,26 @@ EOF
 }
 
 # --------------------------------------------------
+# Custom Scripts
+# --------------------------------------------------
+install_custom_scripts() {
+    log "Installing custom webapp creator (mkapp)"
+
+    # Ensure the local bin directory exists
+    mkdir -p "$HOME/.local/bin"
+
+    # Copy the file and rename it to 'mkapp'
+    # Assuming the script is in your current directory
+    if [ -f "./create-webapp.sh" ]; then
+        cp "./create-webapp.sh" "$HOME/.local/bin/mkapp"
+        chmod +x "$HOME/.local/bin/mkapp"
+        log "mkapp installed to ~/.local/bin"
+    else
+        warn "create-webapp.sh not found in current directory, skipping."
+    fi
+}
+
+# --------------------------------------------------
 # Cleanup
 # --------------------------------------------------
 cleanup() {
@@ -188,6 +208,7 @@ main() {
     install_starship
     set_starship_config
     configure_bash
+    install_custom_scripts
 
     configure_battery_limit
     cleanup
