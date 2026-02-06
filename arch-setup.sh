@@ -51,8 +51,9 @@ install_base_packages() {
         noto-fonts-cjk \
         zed \
         fastfetch \
-        qt6-imageformats \
-        lsd 
+        lsd \
+	bat \ 
+	wtype
 }
 
 enable_services() {
@@ -173,7 +174,7 @@ install_custom_scripts() {
     # Ensure the local bin directory exists
     mkdir -p "$HOME/.local/bin"
 
-    # Copy the file and rename it to 'mkapp'
+    # Copy the file and rename it to 'create-webapp'
     # Assuming the script is in your current directory
     if [ -f "./create-webapp.sh" ]; then
         cp "./create-webapp.sh" "$HOME/.local/bin/create-webapp"
@@ -196,7 +197,7 @@ cleanup() {
 # Main
 # --------------------------------------------------
 main() {
-#    require_sudo
+    require_sudo
 #    update_system
 #    install_base_packages
 #    configure_reflector
