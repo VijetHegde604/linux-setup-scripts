@@ -52,8 +52,8 @@ install_base_packages() {
         zed \
         fastfetch \
         lsd \
-	bat \ 
-	wtype
+	    bat \ 
+	    wtype
 }
 
 enable_services() {
@@ -99,6 +99,8 @@ install_aur_packages() {
         snapper \
         snapper-support \
         limine-snapper-sync \
+        limine-mkinitcpio-hook \ 
+        bruno-bin
 
 }
 
