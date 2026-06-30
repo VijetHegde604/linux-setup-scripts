@@ -28,6 +28,9 @@ PACKAGES=(
     ouch
     zellij
     vlc
+    adw-gtk-theme
+    nautilus
+    greetd
 )
 
 echo "Installing repository packages..."
@@ -66,7 +69,7 @@ CHEZMOI_CONF_FILE="$CHEZMOI_CONF_DIR/chezmoi.toml"
 echo "Setting up Chezmoi..."
 if [ ! -f "$CHEZMOI_CONF_FILE" ]; then
     mkdir -p "$CHEZMOI_CONF_DIR"
-    
+
     echo "Chezmoi configuration not found. Please enter your Git details."
     read -p "Git Username: " GIT_USER
     read -p "Git Email: " GIT_EMAIL
@@ -108,8 +111,68 @@ if [ ! -d "$HOME/.danklinux" ] && ! command -v danklinux &> /dev/null; then
     curl -fsSL https://install.danklinux.com | sh
 else
     echo "DankLinux appears to be installed or configured. Skipping."
-    # If the DankLinux installer is naturally idempotent on its own, you can remove 
+    # If the DankLinux installer is naturally idempotent on its own, you can remove
     # the if-statement and just run: curl -fsSL https://install.danklinux.com | sh
 fi
+
+# 7. Configure Battery Charge Threshold
+echo "Setting up battery charge threshold service..."
+SERVICE_FILE="/etc/systemd/system/battery-threshold.service"
+
+cat <<EOF | sudo tee "$SERVICE_FILE" > /dev/null
+[Unit]
+Description=Set battery charge threshold
+After=sysinit.target
+After=systemd-modules-load.service
+
+[Service]
+Type=oneshot
+# Systemd services run as root, so sudo is not needed here
+ExecStart=/bin/bash -c "sleep 1 && echo 80 > /sys/class/power_supply/BAT0/charge_control_end_threshold"
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+echo "Enabling and starting battery-threshold.service..."
+sudo systemctl daemon-reload
+sudo systemctl enable --now battery-threshold.service
+
+# 8. Install and Configure Greetd for Niri
+echo "Configuring greetd for niri-session..."
+
+# Ensure greetd is installed
+if ! command -v greetd &> /dev/null; then
+    echo "Installing greetd..."
+    if command -v paru &> /dev/null; then
+        paru -S --needed --noconfirm greetd
+    else
+        sudo pacman -S --needed --noconfirm greetd
+    fi
+fi
+
+GREETD_CONF="/etc/greetd/config.toml"
+
+# Idempotency check: only append if [initial_session] isn't already there
+if sudo grep -q "\[initial_session\]" "$GREETD_CONF" 2>/dev/null; then
+    echo "greetd [initial_session] is already configured. Skipping."
+else
+    echo "Adding [initial_session] to $GREETD_CONF..."
+    
+    # Backup the original config just in case
+    sudo cp "$GREETD_CONF" "${GREETD_CONF}.bak"
+    
+    # Append the configuration using the current $USER
+    cat <<EOF | sudo tee -a "$GREETD_CONF" > /dev/null
+
+[initial_session]
+command = "niri-session"
+user = "$USER"
+EOF
+fi
+
+echo "Enabling greetd service..."
+# Use -f to force enable, which automatically disables conflicting display managers like SDDM
+sudo systemctl enable -f greetd.service
 
 echo "Setup complete! You may need to restart your terminal or log out and log back in for all changes (like Nix) to take effect."
