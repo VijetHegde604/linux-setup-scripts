@@ -19,6 +19,15 @@ PACKAGES=(
     lazygit
     chezmoi
     starship
+    zoxide
+    ripgrep
+    fd
+    duf
+    fzf
+    wget
+    ouch
+    zellij
+    vlc
 )
 
 echo "Installing repository packages..."
