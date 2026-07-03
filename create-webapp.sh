@@ -1,118 +1,121 @@
 #!/usr/bin/env bash
-# Exit immediately if a command exits with a non-zero status
 set -euo pipefail
 
-# Colors for UI
-GREEN="\033[0;32m"
-CYAN="\033[0;36m"
-YELLOW="\033[1;33m"
-RED="\033[0;31m"
-RESET="\033[0m"
+echo "--- Web App Creator ---"
 
-print_header() { echo -e "${CYAN}==> $1${RESET}"; }
-print_ok() { echo -e "${GREEN}[OK]${RESET} $1"; }
-print_warn() { echo -e "${YELLOW}[WARN]${RESET} $1"; }
-print_err() { echo -e "${RED}[ERR]${RESET} $1"; }
+# -------------------------------
+# Detect default browser command
+# -------------------------------
+get_default_browser() {
+  local desktop desktop_file exec
 
-# Check dependencies
-if ! command -v curl &> /dev/null; then
-    print_err "curl is required but not installed. Please install it."
+  desktop="$(xdg-mime query default x-scheme-handler/http 2>/dev/null || true)"
+
+  if [ -z "$desktop" ]; then
+    desktop="$(xdg-settings get default-web-browser 2>/dev/null || true)"
+  fi
+
+  [ -n "$desktop" ] || {
+    echo "Error: Could not detect default browser (.desktop)"
     exit 1
-fi
+  }
 
-# The browser to use (must support Chromium's --app flag)
-CHOSEN_BROWSER="brave-browser"
+  desktop_file="$(find \
+    ~/.local/share/applications \
+    /usr/share/applications \
+    /run/current-system/sw/share/applications \
+    -name "$desktop" 2>/dev/null | head -n1)"
 
-# Fallback check if brave-browser isn't the exact command name
-if ! command -v "$CHOSEN_BROWSER" &> /dev/null; then
-    if command -v brave &> /dev/null; then CHOSEN_BROWSER="brave";
-    elif command -v google-chrome &> /dev/null; then CHOSEN_BROWSER="google-chrome";
-    elif command -v chromium &> /dev/null; then CHOSEN_BROWSER="chromium";
-    else
-        print_warn "Brave not found. The generated file may need manual tweaking for your specific browser."
-    fi
-fi
-
-clear
-print_header "Web App Creator (PWA)"
-
-# 1. Collect User Input
-read -p "Enter App Name (e.g., Jellyfin): " APP_NAME
-if [[ -z "${APP_NAME// /}" ]]; then
-    print_err "App Name cannot be empty."
+  [ -f "$desktop_file" ] || {
+    echo "Error: Could not find .desktop file for $desktop"
     exit 1
-fi
+  }
 
-read -p "Enter URL (e.g., 192.168.1.100:8096): " APP_URL
-if [[ -z "${APP_URL// /}" ]]; then
-    print_err "URL cannot be empty."
-    exit 1
-fi
+  exec="$(grep -E '^Exec=' "$desktop_file" | head -n1 | cut -d= -f2)"
 
-# Auto-fix URL if http(s):// is missing
-if [[ ! "$APP_URL" =~ ^https?:// ]]; then
-    APP_URL="http://$APP_URL" # Defaulting to http for local IPs, change to https if needed
-fi
+  # Remove placeholders (%U, %u, etc.)
+  exec="${exec//%u/}"
+  exec="${exec//%U/}"
+  exec="${exec//%f/}"
+  exec="${exec//%F/}"
 
-read -p "Enter custom Icon URL (Leave blank to auto-fetch from Dashboard Icons): " ICON_URL
+  # Extract only the binary (remove extra flags)
+  exec="$(echo "$exec" | awk '{print $1}')"
 
-# 2. Setup Paths & Slugs
-# Create sanitized slug (lowercase, replace non-alphanumeric with dashes, trim edges)
-APP_SLUG=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | sed -e 's/[^a-z0-9]/-/g' -e 's/-\+/-/g' -e 's/^-//' -e 's/-$//')
+  echo "$exec"
+}
+
+CHOSEN_BROWSER="$(get_default_browser)"
+echo "Using browser: $CHOSEN_BROWSER"
+
+# -------------------------------
+# Collect User Input
+# -------------------------------
+read -rp "Enter App Name (e.g., ChatGPT): " APP_NAME
+read -rp "Enter URL (e.g., https://chatgpt.com): " APP_URL
+read -rp "Enter Icon URL (Optional, press enter to auto-fetch from dashboard-icons): " ICON_URL
+
+# Validate input
+[ -n "$APP_NAME" ] || { echo "App name required"; exit 1; }
+[ -n "$APP_URL" ] || { echo "URL required"; exit 1; }
+
+# -------------------------------
+# Prepare paths
+# -------------------------------
+APP_SLUG="$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9')"
 
 ICON_DIR="$HOME/.local/share/icons"
 APP_DIR="$HOME/.local/share/applications"
+
 ICON_PATH="$ICON_DIR/$APP_SLUG.png"
 DESKTOP_FILE="$APP_DIR/$APP_SLUG.desktop"
 
-mkdir -p "$ICON_DIR"
-mkdir -p "$APP_DIR"
+mkdir -p "$ICON_DIR" "$APP_DIR"
 
-# 3. Handle Icon Download
-if [[ -z "${ICON_URL// /}" ]]; then
-    print_ok "No icon provided. Attempting to fetch from Dashboard Icons..."
+# -------------------------------
+# Handle Icon
+# -------------------------------
+if [ -z "$ICON_URL" ]; then
+  echo "No icon URL provided. Attempting auto-fetch from dashboard-icons..."
 
-    # Try fetching from walkxcode/dashboard-icons via jsDelivr CDN
-    # -s: silent, -f: fail on HTTP errors (like 404), -L: follow redirects
-    DASHBOARD_ICON_URL="https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${APP_SLUG}.png"
+  # Construct URL for walkxcode/dashboard-icons using the app slug
+  DASHBOARD_ICON_URL="https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/${APP_SLUG}.png"
 
-    if curl -sfL "$DASHBOARD_ICON_URL" -o "$ICON_PATH"; then
-        ICON_VALUE="$ICON_PATH"
-        print_ok "Dashboard icon fetched successfully!"
-    else
-        print_warn "Icon not found in Dashboard Icons. Falling back to website favicon..."
-
-        # Extract domain from URL for the favicon API
-        DOMAIN=$(echo "$APP_URL" | sed -e 's|^[^/]*//||' -e 's|/.*$||')
-        AUTO_ICON_URL="https://s2.googleusercontent.com/s2/favicons?domain=${DOMAIN}&sz=128"
-
-        if curl -sL "$AUTO_ICON_URL" -o "$ICON_PATH"; then
-            ICON_VALUE="$ICON_PATH"
-            print_ok "Website favicon fetched successfully."
-        else
-            print_warn "Failed to fetch any icon. Using default web browser icon."
-            ICON_VALUE="web-browser"
-        fi
-    fi
+  if curl -L --fail --silent "$DASHBOARD_ICON_URL" -o "$ICON_PATH"; then
+    echo "Successfully fetched icon for '$APP_SLUG' from dashboard-icons."
+    ICON_VALUE="$ICON_PATH"
+  else
+    echo "Warning: Icon not found in dashboard-icons for '$APP_SLUG'. Using default."
+    ICON_VALUE="web-browser"
+    rm -f "$ICON_PATH" # Clean up any empty files left by curl
+  fi
 else
-    print_ok "Downloading custom icon..."
-    if curl -sL "$ICON_URL" -o "$ICON_PATH"; then
-        ICON_VALUE="$ICON_PATH"
-    else
-        print_warn "Failed to download custom icon. Using default."
-        ICON_VALUE="web-browser"
-    fi
+  echo "Downloading user-provided icon..."
+  if curl -L --fail --silent --show-error "$ICON_URL" -o "$ICON_PATH"; then
+    ICON_VALUE="$ICON_PATH"
+  else
+    echo "Warning: Failed to download provided icon, using default."
+    ICON_VALUE="web-browser"
+    rm -f "$ICON_PATH"
+  fi
 fi
 
-# 4. Create the .desktop file
-print_ok "Creating desktop entry..."
-cat <<EOF >"$DESKTOP_FILE"
+# -------------------------------
+# Determine browser flags
+# -------------------------------
+# Assume Chromium-based (Helium, Brave, Chrome, etc.)
+APP_FLAG="--app=$APP_URL"
+
+# -------------------------------
+# Create .desktop file
+# -------------------------------
+cat <<EOF > "$DESKTOP_FILE"
 [Desktop Entry]
 Version=1.0
 Type=Application
 Name=$APP_NAME
-Comment=Web Application launched via $CHOSEN_BROWSER
-Exec=$CHOSEN_BROWSER --app="$APP_URL" --class=webapp-$APP_SLUG
+Comment=Web App ($APP_URL)
+Exec=$CHOSEN_BROWSER $APP_FLAG --class=webapp-$APP_SLUG
 Icon=$ICON_VALUE
 Terminal=false
 Categories=Network;WebBrowser;
@@ -121,13 +124,21 @@ EOF
 
 chmod +x "$DESKTOP_FILE"
 
-# 5. Refresh Desktop Database (so it appears in launchers immediately)
-if command -v update-desktop-database &> /dev/null; then
-    update-desktop-database "$APP_DIR" &> /dev/null || true
+# -------------------------------
+# Update desktop database (optional)
+# -------------------------------
+if command -v update-desktop-database >/dev/null 2>&1; then
+  update-desktop-database "$APP_DIR" >/dev/null 2>&1 || true
 fi
 
-echo
-print_header "SUCCESS: $APP_NAME has been created!"
-echo "Launcher: $DESKTOP_FILE"
-echo "Icon:     $ICON_VALUE"
-echo
+# -------------------------------
+# Done
+# -------------------------------
+echo "----------------------------------------"
+echo "SUCCESS: $APP_NAME created!"
+echo "Browser : $CHOSEN_BROWSER"
+echo "File    : $DESKTOP_FILE"
+if [[ "$ICON_VALUE" != "web-browser" ]]; then
+  echo "Icon    : $ICON_VALUE"
+fi
+echo "----------------------------------------"
