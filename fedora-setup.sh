@@ -36,6 +36,8 @@ install_packages() {
         fastfetch
         nix
         google-noto-color-emoji-fonts
+        alsa-sof-firmware
+        power-profiles-daemon
     )
 
     # dnf install is idempotent by default; it will skip already installed packages.
@@ -50,6 +52,12 @@ install_vicinae() {
     else
         echo "Vicinae is already installed. Skipping."
     fi
+}
+
+install_lazygit() {
+    echo "Installing LazyGit..."
+    sudo dnf copr enable atim/lazygit -y
+    sudo dnf install lazygit -y
 }
 
 setup_flatpaks() {
