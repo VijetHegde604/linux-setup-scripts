@@ -38,6 +38,7 @@ install_packages() {
         google-noto-color-emoji-fonts
         alsa-sof-firmware
         power-profiles-daemon
+        kf6-kimageformats
     )
 
     # dnf install is idempotent by default; it will skip already installed packages.
