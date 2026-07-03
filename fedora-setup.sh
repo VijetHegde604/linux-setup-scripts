@@ -39,6 +39,7 @@ install_packages() {
         alsa-sof-firmware
         power-profiles-daemon
         kf6-kimageformats
+        git-credential-libsecret
     )
 
     # dnf install is idempotent by default; it will skip already installed packages.
