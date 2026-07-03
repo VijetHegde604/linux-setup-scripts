@@ -40,6 +40,9 @@ install_packages() {
         power-profiles-daemon
         kf6-kimageformats
         git-credential-libsecret
+        btop
+        duf
+
     )
 
     # dnf install is idempotent by default; it will skip already installed packages.
