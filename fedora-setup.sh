@@ -215,11 +215,11 @@ main() {
     install_packages
     install_vicinae
     setup_flatpaks
-    setup_chezmoi
     install_nix
     install_danklinux
-    setup_battery_threshold
+    setup_chezmoi
     setup_greetd_niri
+    setup_battery_threshold
     install_zed
     install_tailscale
     setup-plymouth
