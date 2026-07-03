@@ -16,16 +16,13 @@ install_packages() {
         wtype
         gnome-keyring
         seahorse
-        lazygit
         chezmoi
-        starship
         zoxide
         ripgrep
         fd-find
         duf
         fzf
         wget
-        zellij
         vlc
         nautilus
         greetd
@@ -34,6 +31,11 @@ install_packages() {
         kf5-kimageformats
         adw-gtk3-theme
         plymouth-theme-spinner
+        xdg-user-dirs
+        iwlifi-mvm-firmware
+        fastfetch
+        nix
+        google-noto-color-emoji-fonts
     )
 
     # dnf install is idempotent by default; it will skip already installed packages.
@@ -211,16 +213,26 @@ setup-plymouth() {
     sudo plymouth-set-default-theme spinner
 }
 
+install_starship() {
+    echo "Checking for Starship..."
+    if ! command -v starship &> /dev/null; then
+        echo "Installing Starship..."
+        curl -sS https://starship.rs/install.sh | sh
+        echo "starship installed"
+    else
+        echo "Starship already installed. Skipping."
+}
+
 main() {
     install_packages
     install_vicinae
     setup_flatpaks
-    install_nix
     install_danklinux
     setup_chezmoi
     setup_greetd_niri
     setup_battery_threshold
     install_zed
+    install_starship
     install_tailscale
     setup-plymouth
 
