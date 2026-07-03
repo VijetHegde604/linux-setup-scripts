@@ -42,7 +42,6 @@ install_packages() {
         git-credential-libsecret
         btop
         duf
-
     )
 
     # dnf install is idempotent by default; it will skip already installed packages.
@@ -221,8 +220,8 @@ install_tailscale() {
         echo "Tailscale is already installed. Skipping."
     fi
 }
-
-setup-plymouth() {
+sp
+setup_plymouth() {
     sudo plymouth-set-default-theme spinner
 }
 
@@ -247,7 +246,7 @@ main() {
     install_zed
     install_starship
     install_tailscale
-    setup-plymouth
+    setup_plymouth
 
     echo "Setup complete! You may need to restart your terminal or log out and log back in for all changes (like Nix) to take effect."
 }
