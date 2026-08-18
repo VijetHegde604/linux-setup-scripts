@@ -306,6 +306,7 @@ main() {
     install_packages
     install_vicinae
     setup_flatpaks
+    install_lazygit
     install_danklinux
     setup_chezmoi
     setup_greetd_niri
