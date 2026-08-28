@@ -39,6 +39,8 @@ install_packages() {
         kf6-kimageformats
         git-credential-libsecret
         btop
+        iwlwifi-mvm-firmware
+        pulseaudio-utils
     )
 
     # dnf install is idempotent; already-installed packages are skipped.
